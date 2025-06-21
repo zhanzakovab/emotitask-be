@@ -1,17 +1,26 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import List
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from app.schemas import (
     HealthResponse, ErrorResponse, 
     QuestionnaireRequest, QuestionnaireResponse,
     Task, TaskCreate, TaskUpdate,
-    ChatHistory, ChatHistoryCreate, ChatHistoryUpdate, ChatHistoryUpdateMessages
+    ChatHistory, ChatHistoryCreate, ChatHistoryUpdate, ChatHistoryUpdateMessages,
+    UserMBTIType, UserMBTITypeCreate, UserMBTITypeUpdate
 )
 from app.services.openai_service import get_openai_service, OpenAIService
 from app.services.question_service import get_question_service, QuestionService
 from app.database import get_db
 from app.config import settings
-from app.models.database_models import Task as TaskModel, ChatHistory as ChatHistoryModel
+from app.models.database_models import (
+    Task as TaskModel, 
+    ChatHistory as ChatHistoryModel,
+    Question as QuestionModel,
+    Answer as AnswerModel,
+    MBTIType as MBTITypeModel,
+    UserMBTIType as UserMBTITypeModel,
+    ChatStyle as ChatStyleModel
+)
 
 router = APIRouter()
 
@@ -81,7 +90,6 @@ def create_task(
             name=task.name,
             description=task.description,
             user_id=task.user_id,
-            goal_id=task.goal_id,
             priority=task.priority,
             is_completed=False
         )
@@ -167,8 +175,6 @@ def update_task(
             task.name = task_update.name
         if task_update.description is not None:
             task.description = task_update.description
-        if task_update.goal_id is not None:
-            task.goal_id = task_update.goal_id
         if task_update.is_completed is not None:
             task.is_completed = task_update.is_completed
         if task_update.priority is not None:
@@ -332,24 +338,130 @@ def update_chat_history(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error updating chat history: {str(e)}")
 
-@router.delete("/chat-history/{chat_id}")
-def delete_chat_history(
-    chat_id: int,
+# User MBTI Type Management Endpoints
+
+@router.post("/user-mbti-types", response_model=UserMBTIType)
+def create_user_mbti_type(
+    user_mbti_type: UserMBTITypeCreate,
     db: Session = Depends(get_db)
 ):
     """
-    Delete a chat history.
+    Create a new user MBTI type relationship.
     """
     try:
-        chat_history = db.query(ChatHistoryModel).filter(ChatHistoryModel.id == chat_id).first()
-        if not chat_history:
-            raise HTTPException(status_code=404, detail="Chat history not found")
-        
-        db.delete(chat_history)
+        db_user_mbti_type = UserMBTITypeModel(
+            user_id=user_mbti_type.user_id,
+            mbti_type_id=user_mbti_type.mbti_type_id
+        )
+        db.add(db_user_mbti_type)
         db.commit()
-        return {"message": "Chat history deleted successfully"}
+        db.refresh(db_user_mbti_type)
+        return db_user_mbti_type
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error creating user MBTI type: {str(e)}")
+
+@router.get("/user-mbti-types", response_model=List[UserMBTIType])
+def list_user_mbti_types(
+    user_id: Optional[int] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    List all user MBTI type relationships, optionally filtered by user_id.
+    """
+    try:
+        query = db.query(UserMBTITypeModel)
+        if user_id is not None:
+            query = query.filter(UserMBTITypeModel.user_id == user_id)
+        user_mbti_types = query.all()
+        return user_mbti_types
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching user MBTI types: {str(e)}")
+
+@router.get("/user-mbti-types/{user_id}/{mbti_type_id}", response_model=UserMBTIType)
+def get_user_mbti_type(
+    user_id: int,
+    mbti_type_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Get a specific user MBTI type relationship by user_id and mbti_type_id.
+    """
+    try:
+        user_mbti_type = db.query(UserMBTITypeModel).filter(
+            UserMBTITypeModel.user_id == user_id,
+            UserMBTITypeModel.mbti_type_id == mbti_type_id
+        ).first()
+        if not user_mbti_type:
+            raise HTTPException(status_code=404, detail="User MBTI type not found")
+        return user_mbti_type
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching user MBTI type: {str(e)}")
+
+@router.put("/user-mbti-types/{user_id}/{mbti_type_id}", response_model=UserMBTIType)
+def update_user_mbti_type(
+    user_id: int,
+    mbti_type_id: int,
+    user_mbti_type_update: UserMBTITypeUpdate,
+    db: Session = Depends(get_db)
+):
+    """
+    Update a user MBTI type relationship.
+    Note: Since this uses a composite primary key, updating mbti_type_id effectively creates a new relationship.
+    """
+    try:
+        user_mbti_type = db.query(UserMBTITypeModel).filter(
+            UserMBTITypeModel.user_id == user_id,
+            UserMBTITypeModel.mbti_type_id == mbti_type_id
+        ).first()
+        if not user_mbti_type:
+            raise HTTPException(status_code=404, detail="User MBTI type not found")
+        
+        if user_mbti_type_update.mbti_type_id is not None:
+            # Since we're changing the primary key, we need to delete the old record and create a new one
+            db.delete(user_mbti_type)
+            db.commit()
+            
+            new_user_mbti_type = UserMBTITypeModel(
+                user_id=user_id,
+                mbti_type_id=user_mbti_type_update.mbti_type_id
+            )
+            db.add(new_user_mbti_type)
+            db.commit()
+            db.refresh(new_user_mbti_type)
+            return new_user_mbti_type
+        
+        return user_mbti_type
     except HTTPException:
         raise
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error deleting chat history: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error updating user MBTI type: {str(e)}")
+
+@router.delete("/user-mbti-types/{user_id}/{mbti_type_id}")
+def delete_user_mbti_type(
+    user_id: int,
+    mbti_type_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Delete a user MBTI type relationship.
+    """
+    try:
+        user_mbti_type = db.query(UserMBTITypeModel).filter(
+            UserMBTITypeModel.user_id == user_id,
+            UserMBTITypeModel.mbti_type_id == mbti_type_id
+        ).first()
+        if not user_mbti_type:
+            raise HTTPException(status_code=404, detail="User MBTI type not found")
+        
+        db.delete(user_mbti_type)
+        db.commit()
+        return {"message": "User MBTI type deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error deleting user MBTI type: {str(e)}")

@@ -15,10 +15,25 @@ A simple Python backend service built with FastAPI that provides endpoints for O
 - **Environment Configuration**: Flexible configuration via environment variables
 - **Error Handling**: Comprehensive error handling and validation
 - **Chat History Management**: Full CRUD operations for chat conversations
+- **Question Management**: Full CRUD operations for questionnaire questions
+- **Answer Management**: Full CRUD operations for question answers
+- **MBTI Type Management**: Full CRUD operations for personality types
+- **User MBTI Type Management**: Full CRUD operations for user-personality relationships
+- **Chat Style Management**: Full CRUD operations for personality-based chat styles
 
 ## Database Schema
 
-The service includes the following database tables:
+The application uses the following database tables:
+
+- **users**: User information
+- **goals**: User goals
+- **tasks**: User tasks with priority and completion status
+- **chat_histories**: Conversation history with AI responses
+- **questions**: Questionnaire questions
+- **answers**: Answers to questions
+- **mbti_types**: MBTI personality types
+- **user_mbti_types**: User-MBTI type relationships
+- **chat_styles**: Personality-based chat styles
 
 ### Users Table
 - `id`: Primary key
@@ -41,7 +56,6 @@ The service includes the following database tables:
 - `name`: Task name
 - `description`: Task description
 - `user_id`: Foreign key to users
-- `goal_id`: Foreign key to goals (optional)
 - `is_completed`: Completion status
 - `priority`: Task priority (1=Low, 2=Medium, 3=High)
 - `created_at`, `updated_at`: Timestamps
@@ -54,6 +68,36 @@ The service includes the following database tables:
 - `messages`: Chat history messages
 - `model_used`: Model used for the chat
 - `tokens_used`: Tokens used for the chat
+- `created_at`, `updated_at`: Timestamps
+
+### Questions Table
+- `id`: Primary key
+- `question`: Question text
+- `created_at`, `updated_at`: Timestamps
+
+### Answers Table
+- `id`: Primary key
+- `question_id`: Foreign key to questions
+- `answer`: Answer text
+- `created_at`, `updated_at`: Timestamps
+
+### MBTI Types Table
+- `id`: Primary key
+- `persona_id`: MBTI persona ID (e.g., INTJ, ENFP)
+- `name`: MBTI type name
+- `description`: MBTI type description
+- `created_at`, `updated_at`: Timestamps
+
+### User MBTI Types Table
+- `user_id`: Foreign key to users (part of composite primary key)
+- `mbti_type_id`: Foreign key to mbti_types (part of composite primary key)
+- `created_at`, `updated_at`: Timestamps
+
+### Chat Styles Table
+- `id`: Primary key
+- `mbti_type_id`: Foreign key to mbti_types
+- `keywords`: JSON string of keywords
+- `temperature`: Temperature for chat style (0-2)
 - `created_at`, `updated_at`: Timestamps
 
 ## Quick Start
@@ -158,6 +202,41 @@ The service will be available at `http://localhost:8000`
 - **PUT** `/api/v1/chat-history/{chat_id}/messages` - Update chat history messages
 - **PUT** `/api/v1/chat-history/{chat_id}` - Update chat history general fields
 - **DELETE** `/api/v1/chat-history/{chat_id}` - Delete a chat history
+
+### Question Management
+- **POST** `/api/v1/questions` - Create a new question
+- **GET** `/api/v1/questions` - List all questions
+- **GET** `/api/v1/questions/{question_id}` - Get a specific question
+- **PUT** `/api/v1/questions/{question_id}` - Update a question
+- **DELETE** `/api/v1/questions/{question_id}` - Delete a question
+
+### Answer Management
+- **POST** `/api/v1/answers` - Create a new answer
+- **GET** `/api/v1/answers` - List all answers (optionally filtered by question_id)
+- **GET** `/api/v1/answers/{answer_id}` - Get a specific answer
+- **PUT** `/api/v1/answers/{answer_id}` - Update an answer
+- **DELETE** `/api/v1/answers/{answer_id}` - Delete an answer
+
+### MBTI Type Management
+- **POST** `/api/v1/mbti-types` - Create a new MBTI type
+- **GET** `/api/v1/mbti-types` - List all MBTI types
+- **GET** `/api/v1/mbti-types/{mbti_type_id}` - Get a specific MBTI type
+- **PUT** `/api/v1/mbti-types/{mbti_type_id}` - Update an MBTI type
+- **DELETE** `/api/v1/mbti-types/{mbti_type_id}` - Delete an MBTI type
+
+### User MBTI Type Management
+- **POST** `/api/v1/user-mbti-types` - Create a new user MBTI type relationship
+- **GET** `/api/v1/user-mbti-types` - List all user MBTI type relationships (optionally filtered by user_id)
+- **GET** `/api/v1/user-mbti-types/{user_id}/{mbti_type_id}` - Get a specific user MBTI type relationship
+- **PUT** `/api/v1/user-mbti-types/{user_id}/{mbti_type_id}` - Update a user MBTI type relationship
+- **DELETE** `/api/v1/user-mbti-types/{user_id}/{mbti_type_id}` - Delete a user MBTI type relationship
+
+### Chat Style Management
+- **POST** `/api/v1/chat-styles` - Create a new chat style
+- **GET** `/api/v1/chat-styles` - List all chat styles (optionally filtered by mbti_type_id)
+- **GET** `/api/v1/chat-styles/{chat_style_id}` - Get a specific chat style
+- **PUT** `/api/v1/chat-styles/{chat_style_id}` - Update a chat style
+- **DELETE** `/api/v1/chat-styles/{chat_style_id}` - Delete a chat style
 
 ## Configuration
 

@@ -5,17 +5,10 @@ class QuestionnaireRequest(BaseModel):
     """Model for questionnaire processing request."""
     user_id: int = Field(..., description="User ID")
     question_answers: Dict[str, str] = Field(..., description="Map of question ID to answer")
-    model: str = Field(default="gpt-3.5-turbo", description="OpenAI model to use")
-    max_tokens: Optional[int] = Field(default=1000, description="Maximum tokens to generate")
-    temperature: Optional[float] = Field(default=0.7, description="Sampling temperature")
 
 class QuestionnaireResponse(BaseModel):
     """Model for questionnaire processing response."""
     user_id: int = Field(..., description="User ID")
-    prompt: str = Field(..., description="Generated prompt from answers")
-    response: str = Field(..., description="OpenAI response")
-    model: str = Field(..., description="Model used for generation")
-    usage: Optional[Dict[str, Any]] = Field(default=None, description="Token usage information")
 
 class HealthResponse(BaseModel):
     """Model for health check response."""
@@ -55,30 +48,6 @@ class User(UserBase):
     class Config:
         from_attributes = True
 
-class GoalBase(BaseModel):
-    """Base Goal schema."""
-    name: str = Field(..., description="Goal name")
-    description: Optional[str] = Field(None, description="Goal description")
-
-class GoalCreate(GoalBase):
-    """Schema for creating a goal."""
-    user_id: int
-
-class GoalUpdate(BaseModel):
-    """Schema for updating a goal."""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    is_completed: Optional[bool] = None
-
-class Goal(GoalBase):
-    """Schema for goal response."""
-    id: int
-    user_id: int
-    is_completed: bool
-    
-    class Config:
-        from_attributes = True
-
 class TaskBase(BaseModel):
     """Base Task schema."""
     name: str = Field(..., description="Task name")
@@ -87,14 +56,12 @@ class TaskBase(BaseModel):
 class TaskCreate(TaskBase):
     """Schema for creating a task."""
     user_id: int
-    goal_id: Optional[int] = None
     priority: int = Field(default=1, description="Task priority (1=Low, 2=Medium, 3=High)")
 
 class TaskUpdate(BaseModel):
     """Schema for updating a task."""
     name: Optional[str] = None
     description: Optional[str] = None
-    goal_id: Optional[int] = None
     is_completed: Optional[bool] = None
     priority: Optional[int] = None
 
@@ -102,7 +69,6 @@ class Task(TaskBase):
     """Schema for task response."""
     id: int
     user_id: int
-    goal_id: Optional[int]
     is_completed: bool
     priority: int
     
@@ -142,6 +108,25 @@ class ChatHistory(ChatHistoryBase):
     messages: Optional[str]
     model_used: Optional[str]
     tokens_used: Optional[int]
+    
+    class Config:
+        from_attributes = True
+
+class UserMBTITypeBase(BaseModel):
+    """Base User MBTI Type schema."""
+    user_id: int = Field(..., description="User ID")
+    mbti_type_id: int = Field(..., description="MBTI Type ID")
+
+class UserMBTITypeCreate(UserMBTITypeBase):
+    """Schema for creating a user MBTI type relationship."""
+    pass
+
+class UserMBTITypeUpdate(BaseModel):
+    """Schema for updating a user MBTI type relationship."""
+    mbti_type_id: Optional[int] = None
+
+class UserMBTIType(UserMBTITypeBase):
+    """Schema for user MBTI type response."""
     
     class Config:
         from_attributes = True 
