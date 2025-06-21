@@ -14,6 +14,7 @@ A simple Python backend service built with FastAPI that provides endpoints for O
 - **API Documentation**: Automatic OpenAPI/Swagger documentation
 - **Environment Configuration**: Flexible configuration via environment variables
 - **Error Handling**: Comprehensive error handling and validation
+- **Chat History Management**: Full CRUD operations for chat conversations
 
 ## Database Schema
 
@@ -43,6 +44,16 @@ The service includes the following database tables:
 - `goal_id`: Foreign key to goals (optional)
 - `is_completed`: Completion status
 - `priority`: Task priority (1=Low, 2=Medium, 3=High)
+- `created_at`, `updated_at`: Timestamps
+
+### Chat Histories Table
+- `id`: Primary key
+- `name`: Chat history name
+- `description`: Chat history description
+- `user_id`: Foreign key to users
+- `messages`: Chat history messages
+- `model_used`: Model used for the chat
+- `tokens_used`: Tokens used for the chat
 - `created_at`, `updated_at`: Timestamps
 
 ## Quick Start
@@ -131,6 +142,22 @@ The service will be available at `http://localhost:8000`
 
 ### Available Models
 - **GET** `/api/v1/models` - Get list of available OpenAI models
+
+### Task Management
+- **POST** `/api/v1/tasks` - Create a new task
+- **GET** `/api/v1/tasks` - List all tasks for a user
+- **GET** `/api/v1/tasks/{task_id}` - Get a specific task
+- **PUT** `/api/v1/tasks/{task_id}/complete` - Mark a task as completed
+- **PUT** `/api/v1/tasks/{task_id}` - Update a task
+- **DELETE** `/api/v1/tasks/{task_id}` - Delete a task
+
+### Chat History Management
+- **POST** `/api/v1/chat-history` - Create a new chat history
+- **GET** `/api/v1/chat-history` - List all chat histories for a user
+- **GET** `/api/v1/chat-history/{chat_id}` - Get a specific chat history
+- **PUT** `/api/v1/chat-history/{chat_id}/messages` - Update chat history messages
+- **PUT** `/api/v1/chat-history/{chat_id}` - Update chat history general fields
+- **DELETE** `/api/v1/chat-history/{chat_id}` - Delete a chat history
 
 ## Configuration
 

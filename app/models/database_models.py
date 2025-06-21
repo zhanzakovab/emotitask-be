@@ -17,13 +17,14 @@ class User(Base):
     # Relationships
     goals = relationship("Goal", back_populates="user", cascade="all, delete-orphan")
     tasks = relationship("Task", back_populates="user", cascade="all, delete-orphan")
+    chat_histories = relationship("ChatHistory", back_populates="user", cascade="all, delete-orphan")
 
 class Goal(Base):
     """Goal model representing user goals."""
     __tablename__ = "goals"
     
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), nullable=False, index=True)
+    name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     is_completed = Column(Boolean, default=False)
@@ -40,7 +41,6 @@ class Task(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
-    description = Column(Text, nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     goal_id = Column(Integer, ForeignKey("goals.id"), nullable=True)
     is_completed = Column(Boolean, default=False)
@@ -50,4 +50,22 @@ class Task(Base):
     
     # Relationships
     user = relationship("User", back_populates="tasks")
-    goal = relationship("Goal", back_populates="tasks") 
+    goal = relationship("Goal", back_populates="tasks")
+
+class ChatHistory(Base):
+    """ChatHistory model representing chat conversations."""
+    __tablename__ = "chat_histories"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    messages = Column(Text, nullable=True)  # JSON string of chat messages
+    model_used = Column(String(100), nullable=True)
+    tokens_used = Column(Integer, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User", back_populates="chat_histories")
+

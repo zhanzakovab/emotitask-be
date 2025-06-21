@@ -107,4 +107,41 @@ class Task(TaskBase):
     priority: int
     
     class Config:
+        from_attributes = True
+
+class ChatHistoryBase(BaseModel):
+    """Base ChatHistory schema."""
+    name: str = Field(..., description="Chat history name")
+    description: Optional[str] = Field(None, description="Chat history description")
+
+class ChatHistoryCreate(ChatHistoryBase):
+    """Schema for creating a chat history."""
+    user_id: int
+    messages: Optional[str] = None
+    model_used: Optional[str] = None
+    tokens_used: Optional[int] = None
+
+class ChatHistoryUpdate(BaseModel):
+    """Schema for updating a chat history."""
+    name: Optional[str] = None
+    description: Optional[str] = None
+    messages: Optional[str] = None
+    model_used: Optional[str] = None
+    tokens_used: Optional[int] = None
+
+class ChatHistoryUpdateMessages(BaseModel):
+    """Schema for updating chat history messages specifically."""
+    messages: str = Field(..., description="JSON string of chat messages")
+    model_used: Optional[str] = Field(None, description="Model used for the conversation")
+    tokens_used: Optional[int] = Field(None, description="Total tokens used in the conversation")
+
+class ChatHistory(ChatHistoryBase):
+    """Schema for chat history response."""
+    id: int
+    user_id: int
+    messages: Optional[str]
+    model_used: Optional[str]
+    tokens_used: Optional[int]
+    
+    class Config:
         from_attributes = True 
