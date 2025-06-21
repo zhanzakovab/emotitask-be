@@ -19,23 +19,8 @@ class User(Base):
     chat_histories = relationship("ChatHistory", back_populates="user", cascade="all, delete-orphan")
     user_mbti_types = relationship("UserMBTIType", back_populates="user", cascade="all, delete-orphan")
 
-class Goal(Base):
-    """Goal model representing user goals."""
-    __tablename__ = "goals"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), nullable=False)
-    description = Column(Text, nullable=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    is_completed = Column(Boolean, default=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
-    # Relationships
-    user = relationship("User", back_populates="goals")
-
 class Task(Base):
-    """Task model representing tasks within goals."""
+    """Task model representing tasks"""
     __tablename__ = "tasks"
     
     id = Column(Integer, primary_key=True, index=True)
